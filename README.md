@@ -22,4 +22,4 @@
   first period. For example if the input file name is 'foobar.new.txt' the
   output file will be 'foobar.jclear' with the cleartext.
 
-  The maximum input file size is MAXCLEARSIZE.
+  The maximum input file size is MAXCLEARSIZE, which is about 2 Mb
