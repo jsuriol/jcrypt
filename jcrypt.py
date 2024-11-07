@@ -4,16 +4,16 @@
 
   Toy encryption program.
 
-  Usage: jcrypt.py <file>         #  Encrypt <file>.
-         jcrypt.py <jcrypt_file>  #  Decrypt  <jcrypt_file>.
-         jcrypt -d <argument>     #  Print debugging information in the operation specified.
-         jcrypt -i <jcrypt_file   #  Print information about <jcrypt_file>.
-         jcrypt -p                #  Generate a password of default length (10).
-         jcrypt -p <length>       #  Generate a password of <length> length (range 10-1024).
+  Usage: jcrypt.py <file>           #  Encrypt <file>.
+         jcrypt.py <jcrypt_file>    #  Decrypt  <jcrypt_file>.
+         jcrypt.py -d <file>        #  Print debugging information during encrypting/decrypting.
+         jcrypt.py -i <jcrypt_file  #  Print information about <jcrypt_file>.
+         jcrypt.py -p               #  Generate a password of default length (10).
+         jcrypt.py -p <length>      #  Generate a password of <length> length (range 10-1024).
 
   The <file> argument is deemed a stream of bytes, whether it's a text file or a binary file.
 
-  jcrypt encrypts it and creates <file>.jcrypt.
+  jcrypt encrypts <file> and creates <file>.jcrypt.
 
   If <file> is a jcrypt file, regarless of file name extension, jcrypt decrypts it and
   creates <file>.jclear.
@@ -79,9 +79,17 @@ SHA256_LEN    = 64
 SHA512_LEN    = 128
 HEADER_LEN    = MAGIC_LEN + NAME_LEN + VERSION_LEN + TIME_LEN + SHA256_LEN * 3
 
-MAXFILESIZE  = 5242880
+#
+#  Size in bytes of the biggest chunk to encrypt.
+#
+MAXCHUNKSIZE = 1000000    
+#
+#  Size in bytes of the biggest file accepted. 
+#
+MAXFILESIZE  = 50000000
 MINCLEARSIZE = 15
 MAXCLEARSIZE = MAXFILESIZE // 3
+
 # For key generator.
 KEY_MIN_LEN  = 10
 KEY_MAX_LEN  = 1024
@@ -288,6 +296,7 @@ def get_key():
     '''
         Get the password (henceforth known as 'key').
     '''
+    print('Getting the key')
     while True:
         try:
             key = getpass.getpass()
@@ -628,6 +637,7 @@ def main():
 
     global DEBUG
 
+    print('\nSTART')
     password_help = '''Generate a password, for a given length, maximum length: 1024, minimum: 10, default: 10.'''
     version = PROG + ' ' + VERSION
 
@@ -668,6 +678,7 @@ def main():
     if args.datafile:
         filename = args.datafile
         try:
+            print("Before getsize.")
             size = os.path.getsize(filename)
             if MINCLEARSIZE > size > MAXFILESIZE:
                 print("Valid input file size range is {MINCLEARSIZE}-{MAXFILESIZE}")
@@ -686,8 +697,10 @@ def main():
         key = get_key()
 
         if status == ENCRYPT:
+            print('DEBUG: encripting...')
             retval = encrypt(key, data, filename)
         elif status == DECRYPT:
+            print('DEBUG: decripting...')
             retval = decrypt(key, data, filename)
 
     return retval
@@ -698,3 +711,25 @@ if __name__ == "__main__":
     except(KeyboardInterrupt):
         print('\n...Program Stopped Manually!')
         raise
+
+
+
+
+'''
+import os
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+# Pseudo-random key and initialisation vector
+key = os.urandom(32)           # (32*8=256-bit. AES also accepts 128/192-bit)
+init_vector = os.urandom(16)   # (16*8=128-bit. AES only accepts this size)
+
+# Setup module-specific classes
+cipher = Cipher(algorithms.AES(key), modes.CBC(init_vector))
+encryptor = cipher.encryptor()
+decryptor = cipher.decryptor()
+
+# Encrypt and decrypt data
+cyphertext = encryptor.update(b"a secret message") + encryptor.finalize()
+plaintext = decryptor.update(cyphertext) + decryptor.finalize()
+print(plaintext) # 'a secret message'
+'''
